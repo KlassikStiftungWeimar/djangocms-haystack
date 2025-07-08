@@ -1,3 +1,4 @@
+import traceback
 from typing import Optional
 
 from cms.models import CMSPlugin
@@ -12,7 +13,8 @@ from django.utils import translation
 from django.utils.html import strip_tags as _strip_tags
 from django.utils.text import smart_split
 from nh3 import clean
-
+import logging
+logger = logging.getLogger(__name__)
 
 def get_sanitized_text(data):
     stripped = strip_tags(data)
@@ -100,8 +102,12 @@ def get_plugin_index_data(base_plugin: CMSPlugin, request: WSGIRequest):
         context.dicts[context._processors_index] = updates
 
         renderer = ContentRenderer(request)
-        plugin_contents = renderer.render_plugin(instance, context)
 
+        try: ##TODO repair this, error is thrown if sekizai is used.
+            plugin_contents = renderer.render_plugin(instance, context)
+        except Exception as e:
+            logger.error(traceback.format_exc())
+            plugin_contents = ""
         if plugin_contents:
             rendered_plugin_content = get_sanitized_text(plugin_contents)
     else:
